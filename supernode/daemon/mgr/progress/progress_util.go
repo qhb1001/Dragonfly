@@ -171,6 +171,41 @@ func (pm *Manager) updatePeerProgress(taskID, srcPID, dstPID string, pieceNum, p
 	return nil
 }
 
+// updateSlidingWindow updates the sliding window according to the successful pieceNum.
+// The window will keep extending until the piece with the minimum num which is not yet acknowledged.
+func (pm *Manager) updateSlidingWindow(taskID, srcCID string, pieceNum, pieceStatus int) error {
+	// if the status of the piece is not successful, return nil
+	// TODO: if one piece failed too many times, skip it to download the pieces which are currently in the p2p network
+	if pieceStatus != config.PieceSUCCESS {
+		return nil
+	}
+
+	// get client state
+	cs, err := pm.clientProgress.getAsClientState(srcCID)
+	if err != nil {
+		return err
+	}
+
+	// traverse the piece status, until the first acknowledged piece
+	for {
+		if cs.pieceBitSet.Test(uint(getStartIndexByPieceNum(pieceNum) + config.PieceSUCCESS)) {
+			pieceNum += 1
+		} else {
+			break
+		}
+	}
+
+	// get slidingWindowState
+	sws, err := pm.slidingWindow.getAsSlidingWindowState(taskID)
+	if err != nil {
+		return err
+	}
+
+	// update oldest unacknowledged number
+	sws.updateSlidingWindowUNA(pieceNum)
+	return nil
+}
+
 func (pm *Manager) updateBlackInfo(srcPID, dstPID string) error {
 	// update black List
 	blackList, err := pm.clientBlackInfo.GetAsMap(srcPID)
@@ -280,4 +315,17 @@ func getPieceNumByIndex(index uint) int {
 
 func getPieceStatusByIndex(index uint) int {
 	return int(index % 8)
+}
+
+func (pm *Manager) testStreamMode(taskID string) bool {
+	nil, err := pm.slidingWindow.get(taskID)
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
+}
+
+func (sw *slidingWindowState) updateSlidingWindowUNA(una int) {
+	sw.una = int32(una)
 }

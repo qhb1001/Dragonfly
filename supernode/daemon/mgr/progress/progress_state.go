@@ -71,6 +71,14 @@ type superLoadState struct {
 	loadModTime time.Time
 }
 
+type slidingWindowState struct {
+	// wnd represents the size of the send window.
+	wnd int32
+
+	// una represents the oldest unacknowledged sequence number.
+	una int32
+}
+
 func newSuperState() *superState {
 	return &superState{
 		pieceBitSet: &bitset.BitSet{},
@@ -96,5 +104,12 @@ func newSuperLoadState() *superLoadState {
 	return &superLoadState{
 		loadValue:   atomiccount.NewAtomicInt(0),
 		loadModTime: time.Now(),
+	}
+}
+
+func newSlidingWindowState(wnd int32) *slidingWindowState {
+	return &slidingWindowState{
+		wnd: wnd,
+		una: 0,
 	}
 }

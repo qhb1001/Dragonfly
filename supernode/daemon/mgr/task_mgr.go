@@ -32,7 +32,6 @@ var PieceStatusMap = map[string]int{
 }
 
 // TaskMgr as an interface defines all operations against Task.
-// A Task will store some meta info about the taskFile, pieces and something else.
 // A Task has a one-to-one correspondence with a file on the disk which is identified by taskID.
 type TaskMgr interface {
 	// Register a task represents that someone wants to download a file.
@@ -57,7 +56,7 @@ type TaskMgr interface {
 
 	// Update updates the task info with specified info.
 	// In common, there are several situations that we will use this method:
-	// 1. when finished to download, update task status.
+	// 1. when finished downloading, update task status.
 	// 2. for operation usage.
 	// TODO: define a struct of TaskUpdateRequest?
 	Update(ctx context.Context, taskID string, taskInfo *types.TaskInfo) error
